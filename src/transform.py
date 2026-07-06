@@ -1,28 +1,5 @@
-import pandas as pd 
-from extract import load_data
+import pandas as pd
 
-
-RAW_DATA_PATH = "data/raw/samplesuperstore.csv"
-CLEANED_DATA_PATH = "data/processed/cleaned_orders.csv"
-
-
-
-
-
-
-
-def inspect_data(df: pd.DataFrame) -> None:
-    """
-    Printing basic information about the set.
-    """
-    print("DATA PREVIEW:")
-    print(df.head())
-    print("\nDATA INFO")
-    print(df.info())
-    print("\nCOLUMNS: ")
-    print(df.columns)
-    print("\nMISSING VALUES:")
-    print(df.isna().sum())
 
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -75,30 +52,3 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return cleaned_df
-
-
-
-
-def main() -> None:
-    df = load_data(RAW_DATA_PATH)
-
-    print("RAW DATA:")
-    inspect_data(df)
-
-    cleaned_df = clean_data(df)
-
-    print("\nCLEANED DATA:")
-    inspect_data(cleaned_df)
-
-    cleaned_df.to_csv(CLEANED_DATA_PATH, index=False)
-
-    print(f"\nCleaned data saved to: {CLEANED_DATA_PATH}")
-    print("Data cleaning completed successfully.")
-
-
-if __name__ =="__main__":
-    main()
-
-
-
-
