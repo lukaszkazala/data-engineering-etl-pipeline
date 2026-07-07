@@ -4,19 +4,6 @@ import pandas as pd
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     Clean Superstore sales data.
-
-    Cleaning steps:
-    - remove duplicated rows
-    - convert date columns to datetime
-    - remove rows with missing critical values
-    - keep only valid sales and quantity values
-    - standardize column names for future SQL usage
-
-    Parameters:
-        df (pd.DataFrame): Raw Superstore dataset.
-
-    Returns:
-        pd.DataFrame: Cleaned Superstore dataset.
     """
     cleaned_df = df.copy()
 
@@ -52,3 +39,61 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return cleaned_df
+
+
+def create_customer_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create customer-level sales summary.
+    """
+    customer_summary = (
+        df
+        .groupby(["customer_id", "customer_name"], as_index=False)
+        .agg(
+            order_count=("order_id", "nunique"),
+            total_sales=("sales", "sum"),
+            total_profit=("profit", "sum"),
+            average_sales=("sales", "mean"),
+            total_quantity=("quantity", "sum"),
+        )
+        .sort_values("total_sales", ascending=False)
+    )
+
+    return customer_summary
+
+
+def create_product_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create product-level sales summary.
+    """
+    product_summary = (
+        df
+        .groupby(["product_id", "product_name", "category", "sub_category"], as_index=False)
+        .agg(
+            order_count=("order_id", "nunique"),
+            total_sales=("sales", "sum"),
+            total_profit=("profit", "sum"),
+            total_quantity=("quantity", "sum"),
+        )
+        .sort_values("total_sales", ascending=False)
+    )
+
+    return product_summary
+
+
+def create_region_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create region-level sales summary.
+    """
+    region_summary = (
+        df
+        .groupby("region", as_index=False)
+        .agg(
+            order_count=("order_id", "nunique"),
+            total_sales=("sales", "sum"),
+            total_profit=("profit", "sum"),
+            total_quantity=("quantity", "sum"),
+        )
+        .sort_values("total_sales", ascending=False)
+    )
+
+    return region_summary

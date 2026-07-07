@@ -1,104 +1,80 @@
-import pandas as pd 
+import pandas as pd
+
 from extract import load_data
+from transform import (
+    clean_data,
+    create_customer_summary,
+    create_product_summary,
+    create_region_summary,
+)
+from validation import validate_required_columns, validate_cleaned_data
+from load import load_to_postgres
 
 
 RAW_DATA_PATH = "data/raw/samplesuperstore.csv"
+
 CLEANED_DATA_PATH = "data/processed/cleaned_orders.csv"
-
-
-
-
-
+CUSTOMER_SUMMARY_PATH = "data/processed/customer_summary.csv"
+PRODUCT_SUMMARY_PATH = "data/processed/product_summary.csv"
+REGION_SUMMARY_PATH = "data/processed/region_summary.csv"
 
 
 def inspect_data(df: pd.DataFrame) -> None:
     """
-    Printing basic information about the set.
+    Print basic information about the dataset.
     """
     print("DATA PREVIEW:")
     print(df.head())
-    print("\nDATA INFO")
+
+    print("\nDATA INFO:")
     print(df.info())
-    print("\nCOLUMNS: ")
+
+    print("\nCOLUMNS:")
     print(df.columns)
+
     print("\nMISSING VALUES:")
     print(df.isna().sum())
 
-def clean_data(df: pd.DataFrame) -> pd.DataFrame:
+
+def save_to_csv(df: pd.DataFrame, file_path: str) -> None:
     """
-    Clean Superstore sales data.
-
-    Cleaning steps:
-    - remove duplicated rows
-    - convert date columns to datetime
-    - remove rows with missing critical values
-    - keep only valid sales and quantity values
-    - standardize column names for future SQL usage
-
-    Parameters:
-        df (pd.DataFrame): Raw Superstore dataset.
-
-    Returns:
-        pd.DataFrame: Cleaned Superstore dataset.
+    Save DataFrame to a CSV file.
     """
-    cleaned_df = df.copy()
-
-    cleaned_df = cleaned_df.drop_duplicates()
-
-    cleaned_df["Order Date"] = pd.to_datetime(cleaned_df["Order Date"], errors="coerce")
-    cleaned_df["Ship Date"] = pd.to_datetime(cleaned_df["Ship Date"], errors="coerce")
-
-    cleaned_df = cleaned_df.dropna(
-        subset=[
-            "Order ID",
-            "Order Date",
-            "Ship Date",
-            "Customer ID",
-            "Customer Name",
-            "Product ID",
-            "Product Name",
-            "Sales",
-            "Quantity",
-            "Profit",
-        ]
-    )
-
-    cleaned_df = cleaned_df[cleaned_df["Sales"] >= 0]
-    cleaned_df = cleaned_df[cleaned_df["Quantity"] > 0]
-
-    cleaned_df.columns = (
-        cleaned_df.columns
-        .str.lower()
-        .str.replace(" ", "_")
-        .str.replace("-", "_")
-        .str.replace("/", "_")
-    )
-
-    return cleaned_df
-
-
+    df.to_csv(file_path, index=False)
+    print(f"Saved CSV: {file_path}")
 
 
 def main() -> None:
-    df = load_data(RAW_DATA_PATH)
+    raw_df = load_data(RAW_DATA_PATH)
 
     print("RAW DATA:")
-    inspect_data(df)
+    inspect_data(raw_df)
 
-    cleaned_df = clean_data(df)
+    validate_required_columns(raw_df)
+
+    cleaned_df = clean_data(raw_df)
 
     print("\nCLEANED DATA:")
     inspect_data(cleaned_df)
 
-    cleaned_df.to_csv(CLEANED_DATA_PATH, index=False)
+    validate_cleaned_data(cleaned_df)
 
-    print(f"\nCleaned data saved to: {CLEANED_DATA_PATH}")
-    print("Data cleaning completed successfully.")
+    customer_summary = create_customer_summary(cleaned_df)
+    product_summary = create_product_summary(cleaned_df)
+    region_summary = create_region_summary(cleaned_df)
+
+    save_to_csv(cleaned_df, CLEANED_DATA_PATH)
+    save_to_csv(customer_summary, CUSTOMER_SUMMARY_PATH)
+    save_to_csv(product_summary, PRODUCT_SUMMARY_PATH)
+    save_to_csv(region_summary, REGION_SUMMARY_PATH)
+
+    load_to_postgres(cleaned_df, "cleaned_orders")
+    load_to_postgres(customer_summary, "customer_summary")
+    load_to_postgres(product_summary, "product_summary")
+    load_to_postgres(region_summary, "region_summary")
+
+    print("\nETL pipeline completed successfully.")
 
 
-if __name__ =="__main__":
+if __name__ == "__main__":
     main()
-
-
-
-
